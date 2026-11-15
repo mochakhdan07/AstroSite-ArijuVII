@@ -54,7 +54,7 @@ Deployment:
 
 Explore AstroSite:
 
-https://astrosite-ariju.netlify.app
+https://astrosite-arijuvii.netlify.app/
 
 📂 Source Code
 
