@@ -316,7 +316,7 @@ export const UI = {
     id: 'Masukkan ID sertifikat untuk memeriksa keabsahannya.',
     en: 'Enter a certificate ID to check its validity.',
   },
-  verifyPlaceholder: { id: 'Contoh: ARIJU-001', en: 'e.g. ARIJU-001' },
+  verifyPlaceholder: { id: 'Contoh: ARIJU-7F9K2BQX', en: 'e.g. ARIJU-7F9K2BQX' },
   verifyButton: { id: 'Periksa', en: 'Check' },
   verifyChecking: { id: 'Memeriksa...', en: 'Checking...' },
   verifyValid: { id: 'Sertifikat Sah & Terverifikasi', en: 'Certificate Valid & Verified' },

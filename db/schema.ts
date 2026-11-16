@@ -1,6 +1,6 @@
 import { pgTable, pgSequence, text, integer, timestamp } from "drizzle-orm/pg-core";
 
-// Global, gap-safe counter for public certificate numbers (ARIJU-001, ARIJU-002, ...).
+// Internal row counter ("No" column in Google Sheets). Public IDs are random (ARIJU-7F9K2BQX).
 // Postgres sequences are atomic, so simultaneous quiz finishers never get the same number.
 export const certificateSerialSeq = pgSequence("certificate_serial_seq", { startWith: 1, increment: 1 });
 

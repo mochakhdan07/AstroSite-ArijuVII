@@ -1,7 +1,7 @@
 /**
  * ARIJU-VII - Certificate log for Google Sheets.
  *
- * The website assigns each certificate a global ID (ARIJU-001, ARIJU-002, ...)
+ * The website assigns each certificate a random, unique ID (e.g. ARIJU-7F9K2BQX)
  * and sends it here so it is written to your sheet in real time.
  *
  * Setup: see google-apps-script/README.md
