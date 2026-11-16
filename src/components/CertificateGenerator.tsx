@@ -8,7 +8,7 @@ import { useLocale } from '@/i18n/useLocale';
 import type { Locale } from '@/i18n/locale';
 
 const QUIZ_NAME = 'AstroSite – Lunar Landing Site Navigator';
-const PREVIEW_ID = 'ARIJU-XXX';
+const PREVIEW_ID = 'ARIJU-XXXXXXXX';
 
 const SHARED = {
   org: 'ARIJU-VII EDUCATION PROGRAM',

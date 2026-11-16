@@ -3,17 +3,25 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { certificates } from "../../db/schema.js";
 
-// New global IDs: ARIJU-001, ARIJU-002, ... (grows past 999 automatically).
-// Legacy IDs (AS-2026-123456) issued before the global counter stay verifiable.
-const ID_PATTERN = /^(ARIJU-\d{3,9}|AS-\d{4}-\d{4,6})$/;
+// New IDs are random and unguessable: ARIJU-7F9K2BQX.
+// Older IDs (sequential ARIJU-001 and legacy AS-2026-123456) stay verifiable.
+const RANDOM_ID_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // no 0/O/1/I — easy to read & type
+const RANDOM_ID_LENGTH = 8; // 32^8 ≈ 1.1 trillion combinations
+const MAX_ID_ATTEMPTS = 5;
+const ID_PATTERN = /^(ARIJU-[A-Z0-9]{8}|ARIJU-\d{3,9}|AS-\d{4}-\d{4,6})$/;
 const SHEETS_TIMEOUT_MS = 8000;
 
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-function formatGlobalId(serial: number) {
-  return `ARIJU-${String(serial).padStart(3, "0")}`;
+// Uses the cryptographically secure RNG (not Math.random) so IDs cannot be predicted.
+// 32 divides 256 evenly, so `byte % 32` has no modulo bias.
+function generateCertificateId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(RANDOM_ID_LENGTH));
+  let code = "";
+  for (const byte of bytes) code += RANDOM_ID_ALPHABET[byte % RANDOM_ID_ALPHABET.length];
+  return `ARIJU-${code}`;
 }
 
 function toRecord(row: typeof certificates.$inferSelect) {
@@ -107,8 +115,8 @@ export default async (req: Request) => {
     const percent = Math.round((score / total) * 100);
     const scoreText = `${score} / ${total} (${percent}%)`;
 
-    // nextval() is atomic across all concurrent requests worldwide, so every
-    // participant receives a unique, strictly increasing number.
+    // The serial is an internal row number (the "No" column in Google Sheets);
+    // it is never shown as the public certificate ID.
     const result = await db.execute<{ serial: string | number }>(
       sql`select nextval('certificate_serial_seq') as serial`
     );
@@ -118,10 +126,16 @@ export default async (req: Request) => {
       return json({ error: "Could not allocate certificate ID" }, 500);
     }
 
-    const [inserted] = await db
-      .insert(certificates)
-      .values({ id: formatGlobalId(serial), serial, recipientName, country: country || null, quizName, score, total, scoreText })
-      .returning();
+    // Collisions are astronomically unlikely, but retry with a fresh ID just in case.
+    let inserted: typeof certificates.$inferSelect | undefined;
+    for (let attempt = 0; attempt < MAX_ID_ATTEMPTS && !inserted; attempt++) {
+      [inserted] = await db
+        .insert(certificates)
+        .values({ id: generateCertificateId(), serial, recipientName, country: country || null, quizName, score, total, scoreText })
+        .onConflictDoNothing({ target: certificates.id })
+        .returning();
+    }
+    if (!inserted) return json({ error: "Could not allocate certificate ID" }, 500);
     const record = toRecord(inserted);
     const sheetSynced = await syncToGoogleSheets(record);
     return json({ certificate: record, sheetSynced }, 201);
